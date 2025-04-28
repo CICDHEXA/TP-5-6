@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    volumes:
+      - /Users/luevard/tpCICD/gitlab:/var/opt/gitlab/postgresql/data
+    ports:
+      - "8088:80"
+
+#  dbRedmine:
+#    image: postgres:latest
+#    restart: always
+#    volumes:
+#      - /Users/luevard/tpCICD/postgresRedmine:/var/lib/postgresql/data
+#    environment:
+#      POSTGRES_PASSWORD: example
+#      POSTGRES_USER: redmine
+
+#  redmine:
+#    image: redmine
+#    ports:
+#      - 8089:3000
+#    environment:
+#      REDMINE_DB_POSTGRES: dbRedmine
+#      REDMINE_DB_USERNAME: redmine
+#      REDMINE_DB_PASSWORD: example
+#    depends_on: 
+#     - dbRedmine
+
+  GLPI:
+    container_name: glpi
+    image: emadruida/glpi
+    ports:
+      - "8090:80"
+  
+  dbGLPI:
+    image: mysql
+    container_name: dbGLPI
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysupersecurepassword
+      - MYSQL_DATABASE=glpi
