@@ -41,3 +41,22 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=mysupersecurepassword
       - MYSQL_DATABASE=glpi
+
+  drone:
+    image: drone/drone
+    environment:
+      - DRONE_GITLAB_SERVER=gitlab
+      - DRONE_RPC_PROTO=https
+      - DRONE_RPC_SECRET=secretdocker
+      - DRONE_SERVER_HOST=drone.tphexa.com
+      - DRONE_GITLAB_CLIENT_ID=f9865a91d27897dfab2e8c72cfbb5f1304c23008a90a44285b1306b486b4c374
+      - DRONE_GITLAB_CLIENT_SECRET=gloas-58779076540261515606270f7a7cf0e466522061a25fb01675d87fd3dc757195
+
+  runner:
+    image: drone/drone-runner-docker:1
+    environment:
+      - DRONE_RPC_PROTO=https 
+      - DRONE_RPC_HOST=drone.tphexa.com
+      - DRONE_RPC_SECRET=super-duper-secret 
+      - DRONE_RUNNER_CAPACITY=2 
+      - DRONE_RUNNER_NAME=my-first-runner 
