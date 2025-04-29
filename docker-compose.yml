@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: gitlabAccount
       POSTGRES_DB: gitlabhq_production
     volumes:
-      - /Users/luevard/tpCICD/postgresGitlab:/var/lib/postgresql/data
+      - ./postgresGitlab:/var/lib/postgresql/data
     networks:
       - gitlabnet
 
@@ -32,9 +32,9 @@ services:
     ports:
       - "80:80"
     volumes:
-      - /Users/luevard/tpCICD/Gitlab/app:/etc/gitlab
-      - /Users/luevard/tpCICD/Gitlab/logs:/var/log/gitlab'
-      - /Users/luevard/tpCICD/Gitlab/data:/var/opt/gitlab'
+      - ./Gitlab/app:/etc/gitlab
+      - ./Gitlab/logs:/var/log/gitlab'
+      - ./Gitlab/data:/var/opt/gitlab'
     depends_on:
       - dbGitlab
     networks:
@@ -60,7 +60,7 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /Users/luevard/tpCICD/runner:/etc/gitlab-runner
+      - ./runner:/etc/gitlab-runner
     depends_on:
       - gitlab
     networks:
@@ -77,11 +77,11 @@ services:
     ports:
       - "9001:9000"
     volumes:
-      - /Users/luevard/tpCICD/sonar/sonarqube_conf:/opt/sonarqube/conf
-      - /Users/luevard/tpCICD/sonar/sonarqube_data:/opt/sonarqube/data
-      - /Users/luevard/tpCICD/sonar/sonarqube_extensions:/opt/sonarqube/extensions
-      - /Users/luevard/tpCICD/sonar/sonarqube_logs:/opt/sonarqube/logs
-      - /Users/luevard/tpCICD/sonar/sonarqube_temp:/opt/sonarqube/temp
+      - ./sonar/sonarqube_conf:/opt/sonarqube/conf
+      - ./sonar/sonarqube_data:/opt/sonarqube/data
+      - ./sonar/sonarqube_extensions:/opt/sonarqube/extensions
+      - ./sonar/sonarqube_logs:/opt/sonarqube/logs
+      - ./sonar/sonarqube_temp:/opt/sonarqube/temp
     networks:
       - gitlabnet
 
@@ -92,10 +92,27 @@ services:
       POSTGRES_PASSWORD: sonar
       POSTGRES_DB: sonar
     volumes:
-      - /Users/luevard/tpCICD/sonar/db/sonar_db:/var/lib/postgresql
-      - /Users/luevard/tpCICD/sonar/dbdata/sonar_db_data:/var/lib/postgresql/data
+      - ./sonar/db/sonar_db:/var/lib/postgresql
+      - ./sonar/dbdata/sonar_db_data:/var/lib/postgresql/data
     networks:
       - gitlabnet
+
+  openvas:
+    image: immauss/openvas
+    container_name: openvas
+    restart: always
+    environment:
+      - PASSWORD=admin
+      - USERNAME=admin
+    ports:
+      - "9392:9392"
+    volumes:
+      - ./openvas/data:/data
+    networks:
+      - gitlabnet
+    depends_on:
+      - gitlab
+
 
 networks:
   gitlabnet:    

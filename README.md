@@ -20,6 +20,9 @@ Ansible
 
 GITLAB CI
 
+DANS LE FICHIER CONFIG.TOML DES RUNNER IL FAUT RAJOUTER LE NETWORKMODE
+network_mode = "tp-5-6_gitlabnet"
+
 ## 5. Threat and Vulnerability Management
 
 OpenVAS
