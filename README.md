@@ -18,7 +18,7 @@ Ansible
 
 ## 4. Deployment
 
-Drone
+GITLAB CI
 
 ## 5. Threat and Vulnerability Management
 
@@ -34,4 +34,4 @@ SonarQube Community Edition
 
 ## 8. Build
 
-Jenkins ou Drone ou Gitlab CI
+Gitlab CI

@@ -1,39 +1,51 @@
 version: '3'
 
 services:
-  gitlab:
-    image: gitlab/gitlab-ce:latest
+  dbGitlab:
+    image: postgres:latest
+    restart: always
+    container_name: dbGitlab
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: gitlabAccount
+      POSTGRES_DB: gitlabhq_production
     volumes:
-      - /Users/luevard/tpCICD/gitlab:/var/opt/gitlab/postgresql/data
+      - /Users/luevard/tpCICD/postgresGitlab:/var/lib/postgresql/data
+    networks:
+      - gitlabnet
+
+  gitlab:
+    container_name: gitlab
+    image: gitlab/gitlab-ce:latest
+    restart: always
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab';
+        gitlab_rails['db_adapter'] = 'postgresql';
+        gitlab_rails['db_encoding'] = 'unicode';
+        gitlab_rails['db_host'] = 'dbGitlab';
+        gitlab_rails['db_port'] = '5432';
+        gitlab_rails['db_username'] = 'gitlabAccount';
+        gitlab_rails['db_password'] = 'example';
+        gitlab_rails['db_database'] = 'gitlabhq_production';
+        postgresql['enable'] = false
     ports:
-      - "8088:80"
-
-#  dbRedmine:
-#    image: postgres:latest
-#    restart: always
-#    volumes:
-#      - /Users/luevard/tpCICD/postgresRedmine:/var/lib/postgresql/data
-#    environment:
-#      POSTGRES_PASSWORD: example
-#      POSTGRES_USER: redmine
-
-#  redmine:
-#    image: redmine
-#    ports:
-#      - 8089:3000
-#    environment:
-#      REDMINE_DB_POSTGRES: dbRedmine
-#      REDMINE_DB_USERNAME: redmine
-#      REDMINE_DB_PASSWORD: example
-#    depends_on: 
-#     - dbRedmine
+      - "80:80"
+    volumes:
+      - /Users/luevard/tpCICD/Gitlab/app:/etc/gitlab
+      - /Users/luevard/tpCICD/Gitlab/logs:/var/log/gitlab'
+      - /Users/luevard/tpCICD/Gitlab/data:/var/opt/gitlab'
+    depends_on:
+      - dbGitlab
+    networks:
+      - gitlabnet
 
   GLPI:
     container_name: glpi
     image: emadruida/glpi
     ports:
       - "8090:80"
-  
+
   dbGLPI:
     image: mysql
     container_name: dbGLPI
@@ -42,21 +54,50 @@ services:
       - MYSQL_ROOT_PASSWORD=mysupersecurepassword
       - MYSQL_DATABASE=glpi
 
-  drone:
-    image: drone/drone
-    environment:
-      - DRONE_GITLAB_SERVER=gitlab
-      - DRONE_RPC_PROTO=https
-      - DRONE_RPC_SECRET=secretdocker
-      - DRONE_SERVER_HOST=drone.tphexa.com
-      - DRONE_GITLAB_CLIENT_ID=f9865a91d27897dfab2e8c72cfbb5f1304c23008a90a44285b1306b486b4c374
-      - DRONE_GITLAB_CLIENT_SECRET=gloas-58779076540261515606270f7a7cf0e466522061a25fb01675d87fd3dc757195
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /Users/luevard/tpCICD/runner:/etc/gitlab-runner
+    depends_on:
+      - gitlab
+    networks:
+      - gitlabnet
 
-  runner:
-    image: drone/drone-runner-docker:1
+  sonarqube:
+    image: sonarqube:lts-community
+    depends_on:
+      - sonar_db
     environment:
-      - DRONE_RPC_PROTO=https 
-      - DRONE_RPC_HOST=drone.tphexa.com
-      - DRONE_RPC_SECRET=super-duper-secret 
-      - DRONE_RUNNER_CAPACITY=2 
-      - DRONE_RUNNER_NAME=my-first-runner 
+      SONAR_JDBC_URL: jdbc:postgresql://sonar_db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      - "9001:9000"
+    volumes:
+      - /Users/luevard/tpCICD/sonar/sonarqube_conf:/opt/sonarqube/conf
+      - /Users/luevard/tpCICD/sonar/sonarqube_data:/opt/sonarqube/data
+      - /Users/luevard/tpCICD/sonar/sonarqube_extensions:/opt/sonarqube/extensions
+      - /Users/luevard/tpCICD/sonar/sonarqube_logs:/opt/sonarqube/logs
+      - /Users/luevard/tpCICD/sonar/sonarqube_temp:/opt/sonarqube/temp
+    networks:
+      - gitlabnet
+
+  sonar_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - /Users/luevard/tpCICD/sonar/db/sonar_db:/var/lib/postgresql
+      - /Users/luevard/tpCICD/sonar/dbdata/sonar_db_data:/var/lib/postgresql/data
+    networks:
+      - gitlabnet
+
+networks:
+  gitlabnet:    
+    driver: bridge
+
