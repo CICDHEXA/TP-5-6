@@ -38,3 +38,7 @@ SonarQube Community Edition
 ## 8. Build
 
 Gitlab CI
+
+
+
+KpmefGvnU0mjDcHJn4vq2i8903uRfjtYJEt30uNevHk=
