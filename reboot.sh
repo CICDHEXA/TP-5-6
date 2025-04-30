@@ -1,0 +1,1 @@
+docker exec -it gitlab bash -c "gitlab-ctl stop && rm -rf /var/opt/gitlab/gitlab-rails/sockets && mkdir -p /var/opt/gitlab/gitlab-rails/sockets && chown git:git /var/opt/gitlab/gitlab-rails/sockets && chmod 755 /var/opt/gitlab/gitlab-rails/sockets && gitlab-ctl reconfigure && gitlab-ctl restart"

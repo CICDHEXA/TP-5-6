@@ -7,7 +7,7 @@ services:
     container_name: dbGitlab
     environment:
       POSTGRES_PASSWORD: example
-      POSTGRES_USER: gitlabAccount
+      POSTGRES_USER: gitleabAccount
       POSTGRES_DB: gitlabhq_production
     volumes:
       - ./postgresGitlab:/var/lib/postgresql/data
@@ -33,95 +33,55 @@ services:
       - "80:80"
     volumes:
       - ./Gitlab/app:/etc/gitlab
-      - ./Gitlab/logs:/var/log/gitlab'
-      - ./Gitlab/data:/var/opt/gitlab'
+      - ./Gitlab/logs:/var/log/gitlab
+      - ./Gitlab/data:/var/opt/gitlab
     depends_on:
       - dbGitlab
     networks:
       - gitlabnet
 
-  init:
-    build: ./init
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./runner:/etc/gitlab-runner
     depends_on:
       - gitlab
-    volumes:
-      - ./Gitlab/app:/gitlab-config
     networks:
       - gitlabnet
-#
-#  GLPI:
-#    container_name: glpi
-#    image: emadruida/glpi
-#    ports:
-#      - "8090:80"
-#
-#  dbGLPI:
-#    image: mysql
-#    container_name: dbGLPI
-#    restart: always
-#    environment:
-#      - MYSQL_ROOT_PASSWORD=mysupersecurepassword
-#      - MYSQL_DATABASE=glpi
-#
-#  gitlab-runner:
-#    image: gitlab/gitlab-runner:latest
-#    container_name: gitlab-runner
-#    restart: always
-#    volumes:
-#      - /var/run/docker.sock:/var/run/docker.sock
-#      - ./runner:/etc/gitlab-runner
-#    depends_on:
-#      - gitlab
-#    networks:
-#      - gitlabnet
-#
-#  sonarqube:
-#    image: sonarqube:lts-community
-#    depends_on:
-#      - sonar_db
-#    environment:
-#      SONAR_JDBC_URL: jdbc:postgresql://sonar_db:5432/sonar
-#      SONAR_JDBC_USERNAME: sonar
-#      SONAR_JDBC_PASSWORD: sonar
-#    ports:
-#      - "9001:9000"
-#    volumes:
-#      - ./sonar/sonarqube_conf:/opt/sonarqube/conf
-#      - ./sonar/sonarqube_data:/opt/sonarqube/data
-#      - ./sonar/sonarqube_extensions:/opt/sonarqube/extensions
-#      - ./sonar/sonarqube_logs:/opt/sonarqube/logs
-#      - ./sonar/sonarqube_temp:/opt/sonarqube/temp
-#    networks:
-#      - gitlabnet
-#
-#  sonar_db:
-#    image: postgres:13
-#    environment:
-#      POSTGRES_USER: sonar
-#      POSTGRES_PASSWORD: sonar
-#      POSTGRES_DB: sonar
-#    volumes:
-#      - ./sonar/db/sonar_db:/var/lib/postgresql
-#      - ./sonar/dbdata/sonar_db_data:/var/lib/postgresql/data
-#    networks:
-#      - gitlabnet
 
-#  openvas:
-#    image: immauss/openvas
-#    container_name: openvas
-#    restart: always
-#    environment:
-#      - PASSWORD=admin
-#      - USERNAME=admin
-#    ports:
-#      - "9392:9392"
-#    volumes:
-#      - ./openvas/data:/data
-#    networks:
-#      - gitlabnet
-#    depends_on:
-#      - gitlab
+  sonarqube:
+    image: sonarqube:lts-community
+    depends_on:
+      - sonar_db
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar_db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      - "9001:9000"
+    volumes:
+      - ./sonar/sonarqube_conf:/opt/sonarqube/conf
+      - ./sonar/sonarqube_data:/opt/sonarqube/data
+      - ./sonar/sonarqube_extensions:/opt/sonarqube/extensions
+      - ./sonar/sonarqube_logs:/opt/sonarqube/logs
+      - ./sonar/sonarqube_temp:/opt/sonarqube/temp
+    networks:
+      - gitlabnet
 
+  sonar_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - ./sonar/db/sonar_db:/var/lib/postgresql
+      - ./sonar/dbdata/sonar_db_data:/var/lib/postgresql/data
+    networks:
+      - gitlabnet
 
 networks:
   gitlabnet:    

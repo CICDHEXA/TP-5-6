@@ -1,44 +1,23 @@
-# TP-5-6
+# TP5-6
 
-## 1. Source Code Management
+Gitlab: http://gitlab
 
-GitLab CE
+Sonarqube: http://localhost:9001
 
-Affichage du mot de passe root: docker compose exec -it gitlab cat /etc/gitlab/initial_root_password
-LapinDangeruexuhfe83663
+## Prérequis
 
-## 2. ITSM et collaboration
-
-GLPI: glpi/glpi default admin account
-
-
-## 3. Configuration Management
-
-Ansible
-
-## 4. Deployment
-
-GITLAB CI
-
-DANS LE FICHIER CONFIG.TOML DES RUNNER IL FAUT RAJOUTER LE NETWORKMODE
-network_mode = "tp-5-6_gitlabnet"
-
-## 5. Threat and Vulnerability Management
-
-OpenVAS
-
-## 6. Logging & Monitoring
-
-Graylog ou Grafana
-
-## 7. Quality / Testing
-
-SonarQube Community Edition
-
-## 8. Build
-
-Gitlab CI
+1. docker compose up -d et attendre le temps que Gitlab soit accessible via l'url(url ajouté dans le /etc/hosts)
+2. Utiliser le script init.sh et suivre les instructions
+3. Modification du fichier runner/config.toml en rajoutant 'network_mode = "tp-5-6_gitlabnet"' dans l'onglet [runners.docker]
+4. Connexion à Sonarqube(http://localhost:9001/) avec les credentials par défault (admin:admin) et modification du mot de passe administrateur
+5. Cliquer sur 'Add a project' puis 'From Gitlab'
+6. Renseigner les informations suivantes: 
+    - Configuration name: Gitlab
+    - GitLab API URL: http://gitlab/api/v4
+    - Personal Access Token: ACCESS TOKEN du compte administrateur affiché dans le tableau final
+7. Re-renseigner l'ACCESS TOKEN
+8. Set-up le projet "ScannerGITLAB" et suivre les instructions de sonarqube pour ajouter avoir l'analyse:
+    - SONAR_HOST_URL: http://sonarqube:9000
 
 
-
-KpmefGvnU0mjDcHJn4vq2i8903uRfjtYJEt30uNevHk=
+En cas de problème au reboot, il faut executer reboot.sh
