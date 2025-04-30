@@ -6,9 +6,9 @@ services:
     restart: always
     container_name: dbGitlab
     environment:
-      POSTGRES_PASSWORD: example
-      POSTGRES_USER: gitleabAccount
-      POSTGRES_DB: gitlabhq_production
+      POSTGRES_PASSWORD: '${git_db_pass}'
+      POSTGRES_USER: '${git_db_username}'
+      POSTGRES_DB: '${git_db_name}'
     volumes:
       - ./postgresGitlab:/var/lib/postgresql/data
     networks:
@@ -25,9 +25,9 @@ services:
         gitlab_rails['db_encoding'] = 'unicode';
         gitlab_rails['db_host'] = 'dbGitlab';
         gitlab_rails['db_port'] = '5432';
-        gitlab_rails['db_username'] = 'gitlabAccount';
-        gitlab_rails['db_password'] = 'example';
-        gitlab_rails['db_database'] = 'gitlabhq_production';
+        gitlab_rails['db_username'] = '${git_db_username}'
+        gitlab_rails['db_password'] = ${git_db_pass}'
+        gitlab_rails['db_database'] = '${git_db_name}'
         postgresql['enable'] = false
     ports:
       - "80:80"
@@ -82,6 +82,20 @@ services:
       - ./sonar/dbdata/sonar_db_data:/var/lib/postgresql/data
     networks:
       - gitlabnet
+
+  grafana:
+    image: grafana/grafana-enterprise
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+      
+    volumes:
+      - ./grafana-storage:/var/lib/grafana
+      - custom.ini:/etc/grafana/custom.ini
+
+    environment:
+    - GF_PATHS_CONFIG=/etc/grafana/custom.ini
 
 networks:
   gitlabnet:    
