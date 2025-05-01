@@ -1,0 +1,7 @@
+Gitlab/
+ScannerGITLAB/
+postgresGitlab/
+runner/
+sonar/
+config.ini
+.env
