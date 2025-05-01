@@ -87,55 +87,6 @@ if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "null" ]]; then
   exit 1
 fi
 
-# === Push Python script ===
-echo "[INFO] Creating Python script..."
-rm -rf "$PROJECT_NAME"
-mkdir "$PROJECT_NAME"
-cd "$PROJECT_NAME"
-
-cat > main.py <<EOF
-import requests
-
-ACCESS_TOKEN = "$ADMIN_TOKEN"
-PROJECT_ID = $PROJECT_ID
-GITLAB_URL = "$GITLAB_URL"
-
-headers = {
-    "PRIVATE-TOKEN": ACCESS_TOKEN
-}
-
-def get_commits():
-    r = requests.get(f"{GITLAB_URL}/api/v4/projects/{PROJECT_ID}/repository/commits", headers=headers)
-    return r.json() if r.status_code == 200 else []
-
-def get_merge_requests():
-    r = requests.get(f"{GITLAB_URL}/api/v4/projects/{PROJECT_ID}/merge_requests", headers=headers)
-    return r.json() if r.status_code == 200 else []
-
-def get_pipelines():
-    r = requests.get(f"{GITLAB_URL}/api/v4/projects/{PROJECT_ID}/pipelines", headers=headers)
-    return r.json() if r.status_code == 200 else []
-
-def print_report():
-    print("Commits:", len(get_commits()))
-    print("Merge Requests:", len(get_merge_requests()))
-    print("Pipelines:", len(get_pipelines()))
-
-if __name__ == "__main__":
-    print_report()
-EOF
-
-git init
-git checkout -b develop
-git config user.email "$ADMIN_EMAIL"
-git config user.name "$ADMIN_USERNAME"
-git add main.py
-git commit -m "feat: Auto adding project"
-REPO_URL_WITH_AUTH="http://oauth2:$ADMIN_TOKEN@${GITLAB_URL#http://}/$ADMIN_USERNAME/$PROJECT_NAME.git"
-git remote add origin "$REPO_URL_WITH_AUTH"
-git push -u origin develop
-cd ..
-
 # === Création des comptes développeurs ===
 ACCOUNT_INFO=()
 echo "[INFO] Creating 2 developer users..."
@@ -189,27 +140,21 @@ RUBY
 
   USER_ID=$(curl -sS --header "PRIVATE-TOKEN: $ADMIN_TOKEN" "$GITLAB_URL/api/v4/users?username=$DEV_USERNAME" | jq -r '.[0].id')
 
-  # Ajout au projet
   curl -sS --header "PRIVATE-TOKEN: $ADMIN_TOKEN" \
     --data "user_id=$USER_ID&access_level=30" \
     "$GITLAB_URL/api/v4/projects/$PROJECT_ID/members"
 
-  # Création d'un ticket assigné
   curl -sS --header "PRIVATE-TOKEN: $ADMIN_TOKEN" \
     --data "title=Task for $DEV_USERNAME&assignee_ids[]=$USER_ID&description=Auto-assigned issue" \
     "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues" > /dev/null
 
-  # Enregistrement infos pour le tableau
   ACCOUNT_INFO+=("$DEV_USERNAME|$DEV_PASSWORD|$DEV_TOKEN|false")
 done
 
-# === Ajout du compte admin au tableau ===
 ACCOUNT_INFO+=("$ADMIN_USERNAME|$ADMIN_PASSWORD|$ADMIN_TOKEN|true")
 
-# === Enregistrement d’un runner GitLab ===
+# === Runner GitLab ===
 echo -e "\n[INFO] Preparing to register GitLab runner..."
-
-# Étapes manuelles nécessaires
 echo -e "\n[INSTRUCTION] Connectez-vous à l'interface GitLab avec les identifiants suivants :"
 echo "  URL       : http://gitlab"
 echo "  Username  : $ADMIN_USERNAME"
@@ -222,17 +167,40 @@ echo -e "  4. Laissez ce script ouvert pour continuer automatiquement.\n"
 
 read -p "[ACTION REQUISE] Collez ici la commande affichée (ex: gitlab-runner register --non-interactive ...): " RUNNER_COMMAND
 
-# Exécution de la commande d’enregistrement du runner
 echo "[INFO] Enregistrement du runner dans le conteneur 'gitlab-runner'..."
 docker exec gitlab-runner bash -c "$RUNNER_COMMAND --non-interactive --executor docker --docker-image alpine"
 
-# Attente de l’enregistrement effectif
 echo "[INFO] Attente de la confirmation de l'enregistrement du runner..."
 sleep 5
 
 echo -e "\n[INFO] Runner ajouté. Vérifiez la section des 'runners' pour les détails : http://gitlab/admin/runners"
 
-# === Affichage final ===
+# === Ajout du network docker ===
+echo -e "\n[INFO] Ajout du réseau 'tp-5-6_gitlabnet' dans la configuration du runner"
+sed -i '/^\s*network_mtu = 0\s*$/a \ \ \ \ network_mode = "tp-5-6_gitlabnet"' runner/config.toml
+
+# === Préparer le code Python depuis le template ===
+echo "[INFO] Preparing Python script from template..."
+rm -rf "$PROJECT_NAME"
+mkdir "$PROJECT_NAME"
+cd "$PROJECT_NAME"
+
+cp ../main.py main.py
+cp ../.gitlab-ci.yml .gitlab-ci.yml
+sed -i "s|{REPLACEACCESSTOKEN}|\"$ADMIN_TOKEN\"|g" main.py
+sed -i "s|{REPLACEPROJECTID}|$PROJECT_ID|g" main.py
+
+git init
+git checkout -b develop
+git config user.email "$ADMIN_EMAIL"
+git config user.name "$ADMIN_USERNAME"
+git add -A
+git commit -m "feat: Auto adding project"
+REPO_URL_WITH_AUTH="http://oauth2:$ADMIN_TOKEN@${GITLAB_URL#http://}/$ADMIN_USERNAME/$PROJECT_NAME.git"
+git remote add origin "$REPO_URL_WITH_AUTH"
+git push -u origin develop
+
+# === Résumé final ===
 echo -e "\n[INFO] Summary of all accounts:"
 printf "\n%-15s | %-20s | %-30s | %-5s\n" "USERNAME" "PASSWORD" "ACCESS TOKEN" "ADMIN"
 printf -- "-----------------+----------------------+--------------------------------+-------\n"
@@ -241,4 +209,20 @@ for entry in "${ACCOUNT_INFO[@]}"; do
   printf "%-15s | %-20s | %-30s | %-5s\n" "$user" "$pass" "$token" "$isadmin"
 done
 
-echo -e "\n[DONE] Project is available at: $GITLAB_URL/$ADMIN_USERNAME/$PROJECT_NAME (branch: develop)"
+# === Merge develop -> main (en tenant compte du README déjà présent) ===
+echo "[INFO] Merging 'develop' into 'main'..."
+git fetch origin main
+git checkout -b main origin/main
+git merge develop --no-edit --allow-unrelated-histories
+git push -u origin main
+
+# === Résumé final ===
+echo -e "\n[INFO] Summary of all accounts:"
+printf "\n%-15s | %-20s | %-30s | %-5s\n" "USERNAME" "PASSWORD" "ACCESS TOKEN" "ADMIN"
+printf -- "-----------------+----------------------+--------------------------------+-------\n"
+for entry in "${ACCOUNT_INFO[@]}"; do
+  IFS='|' read -r user pass token isadmin <<< "$entry"
+  printf "%-15s | %-20s | %-30s | %-5s\n" "$user" "$pass" "$token" "$isadmin"
+done
+
+echo -e "\n[DONE] Project is available at: $GITLAB_URL/$ADMIN_USERNAME/$PROJECT_NAME (branch: main)"
