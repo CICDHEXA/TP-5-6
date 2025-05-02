@@ -2,6 +2,7 @@ Gitlab/
 ScannerGITLAB/
 postgresGitlab/
 runner/
+grafana-storage/
 sonar/
 config.ini
 .env

@@ -23,3 +23,6 @@ Installation de jq
 10. Relancer la pipeline pour appliquer les dernières modifications de secrets et ainsi avoir l'analyse sur sonarqube
 
 En cas de problème au reboot, il faut executer reboot.sh
+
+Il y a un problème dans l'ajout d'artefact donc pour simuler le rendu sur grafana j'ai rajouté un serveur nginx distribuant un json type rendu par l'exécution du code python.
+

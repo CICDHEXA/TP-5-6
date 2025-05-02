@@ -1,0 +1,8 @@
+{
+    "metrics": [
+      { "Nom": "Commits", "Valeur": 7 },
+      { "Nom": "Merge Requests", "Valeur": 0 },
+      { "Nom": "Pipelines", "Valeur": 6 }
+    ]
+  }
+  
