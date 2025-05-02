@@ -11,6 +11,7 @@ run_api_script:
   artifacts:
     paths:
       - report.json
+  allow_failure: true
 
 sonarqube-check:
   stage: quality

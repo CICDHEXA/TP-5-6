@@ -145,7 +145,7 @@ RUBY
     "$GITLAB_URL/api/v4/projects/$PROJECT_ID/members"
 
   curl -sS --header "PRIVATE-TOKEN: $ADMIN_TOKEN" \
-    --data "title=Tâche $i $DEV_USERNAME&assignee_ids[]=$USER_ID&description=Exemple de ticket" \
+    --data "title=Task for $DEV_USERNAME&assignee_ids[]=$USER_ID&description=Auto-assigned issue" \
     "$GITLAB_URL/api/v4/projects/$PROJECT_ID/issues" > /dev/null
 
   ACCOUNT_INFO+=("$DEV_USERNAME|$DEV_PASSWORD|$DEV_TOKEN|false")

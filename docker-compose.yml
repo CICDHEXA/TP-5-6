@@ -87,10 +87,10 @@ services:
   grafana:
     image: grafana/grafana
     container_name: grafana
+    restart: always
     ports:
       - "3000:3000"
     volumes:
-      - ./grafana-storage:/var/lib/grafana
       - ./confGrafana/data:/etc/grafana/provisioning/datasources
       - ./confGrafana/dashboardsconf:/etc/grafana/provisioning/dashboards
       - ./confGrafana/dashboards:/etc/grafana/dashboards
