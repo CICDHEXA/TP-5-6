@@ -1,0 +1,110 @@
+version: '3'
+
+services:
+  dbGitlab:
+    image: postgres:latest
+    restart: always
+    container_name: dbGitlab
+    environment:
+      POSTGRES_PASSWORD: '${POSTGRES_DB_pass}'
+      POSTGRES_USER: '${POSTGRES_DB_username}'
+      POSTGRES_DB: '${POSTGRES_DB_name}'
+    volumes:
+      - ./postgresGitlab:/var/lib/postgresql/data
+    networks:
+      - gitlabnet
+
+  gitlab:
+    container_name: gitlab
+    image: gitlab/gitlab-ce:latest
+    restart: always
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab';
+        gitlab_rails['db_adapter'] = 'postgresql'
+        gitlab_rails['db_encoding'] = 'unicode';
+        gitlab_rails['db_host'] = 'dbGitlab';
+        gitlab_rails['db_port'] = '5432';
+        gitlab_rails['db_username'] = '${POSTGRES_DB_username}';
+        gitlab_rails['db_password'] = '${POSTGRES_DB_pass}';
+        gitlab_rails['db_database'] = '${POSTGRES_DB_name}';
+        postgresql['enable'] = false
+    ports:
+      - "80:80"
+    volumes:
+      - ./Gitlab/app:/etc/gitlab
+      - ./Gitlab/logs:/var/log/gitlab
+      - ./Gitlab/data:/var/opt/gitlab
+    depends_on:
+      - dbGitlab
+    networks:
+      - gitlabnet
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./runner:/etc/gitlab-runner
+    depends_on:
+      - gitlab
+    networks:
+      - gitlabnet
+
+  sonarqube:
+    image: sonarqube:lts-community
+    depends_on:
+      - sonar_db
+    restart: always
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar_db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      - "9001:9000"
+    volumes:
+      - ./sonar/sonarqube_conf:/opt/sonarqube/conf
+      - ./sonar/sonarqube_data:/opt/sonarqube/data
+      - ./sonar/sonarqube_extensions:/opt/sonarqube/extensions
+      - ./sonar/sonarqube_logs:/opt/sonarqube/logs
+      - ./sonar/sonarqube_temp:/opt/sonarqube/temp
+    networks:
+      - gitlabnet
+
+  sonar_db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - ./sonar/db/sonar_db:/var/lib/postgresql
+      - ./sonar/dbdata/sonar_db_data:/var/lib/postgresql/data
+    networks:
+      - gitlabnet
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./confGrafana/data:/etc/grafana/provisioning/datasources
+      - ./confGrafana/dashboardsconf:/etc/grafana/provisioning/dashboards
+      - ./confGrafana/dashboards:/etc/grafana/dashboards
+    environment:
+      - GF_INSTALL_PLUGINS=marcusolsson-json-datasource
+
+  json-server:
+    image: nginx:alpine
+    container_name: json-server
+    ports:
+      - "9050:80"
+    volumes:
+      - ./data:/usr/share/nginx/html:ro
+
+networks:
+  gitlabnet:    
+    driver: bridge
